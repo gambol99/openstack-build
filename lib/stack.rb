@@ -5,16 +5,22 @@
 #  vim:ts=4:sw=4:et
 #
 require 'fog'
+require 'openstruct'
+require 'yaml'
 
 module OpenstackBuild
 class Stack
 
-  def initialize options
+  attr_reader :options
+
+  def initialize options = {}
+    
+
+    raise ArgumentError, 'you have not specified a configuration file to read'  unless options.ha
 
   end
 
   def create hostname, options 
-
 
 
   end
@@ -42,6 +48,8 @@ class Stack
   end
 
   def image? name
+
+
 
   end
 
