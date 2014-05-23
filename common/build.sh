@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NOVA="/usr/bin/nova"
+
 # defaults
 KEYPAIR="default"
 
@@ -49,8 +49,10 @@ DOMAIN=${RD_OPTION_DOMAIN:-$DOMAIN}
 WORKSPACE=${RD_WORKSPACE:-$WORKSPACE_DEFAULT}
 OPENRC=${OPENRC:-$WORKSPACE/.openrc}
 
-[ -f ${WORKSPACE}/logging.sh   ] && source . ${WORKSPACE}/logging.sh
-[ -f ${WORKSPACE}/openstack.sh ] && source . ${WORKSPACE}/openstack.sh
+# step: import the modules
+for i in logging openstack; do 
+  [ -f "${WORKSPACE}/common/${i}.sh" ] && source "${WORKSPACE}/common/${i}.sh" 
+done
 
 # step: make sure we have all the arguments
 [ -z $HOSTNAME ] && error "you must specify the hostname of the instance"
@@ -100,5 +102,4 @@ $NOVA boot $OPTIONS $FQDN
 [ $? -ne 0 ] && error "we have a problem booting the image"
 
 annonce "succesfully booted the image"
-
 

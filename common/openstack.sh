@@ -5,6 +5,7 @@
 #
 #  vim:ts=2:sw=2:et
 #
+NOVA="/usr/bin/nova"
 
 openstack_credential() {
   [ -e $OPENRC ] || error "unable to find the openstack credentials file"
@@ -43,4 +44,8 @@ image_exists() {
 
 flavor_exists() {
   $NOVA flavor-list | grep -q $1 && return 0 || return 1
+}
+
+addresses() {
+  $NOVA list | grep $1 | egrep -o '([0-9]{1,3}\.){3}[0-9]{1,3} 
 }
