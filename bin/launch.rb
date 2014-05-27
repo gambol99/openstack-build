@@ -8,46 +8,58 @@
 require 'rubygems' if RUBY_VERSION < '1.9.0'
 require 'openstack-build'
 require 'optparse'
-require 'openstruct'
+require 'erb'
 
-commands = {
-  :create => OptionParse::new { |o|
-    [ :hostname, :image, :flavor, :keypair, :hypervisor, :security_group].each do |x|
-      field = x.to_s.upcase
-      o.on( "-#{x[0,1].upcase} #{x.to_s.upcase} #{field}", "--#{x} #{field}", "the #{x} you wish to assign" ) { |x| options.create.x.to_sym = x }
-    end
-    o.on( '-n NETWORK', '--network NETWORK', 'the network/s you wish to assign to the instance' ) do |x| 
-      options.create.networks = [] unless options.create.networks?
-      options.create.networks << x 
-    end
-  },
-  :instance => OptionParse::new { |o|
-      
-
-  }
-}
-
-options = OpenStruct.new 
-Parser = OptionParse::new do |o|
-  o.banner "Usage: #{__FILE__} -H HOSTNAME -f FLAVOR "
-  commands.keys.each do |c|
-
-
-  end
-
+def usage error = nil
+    puts Parser
+    puts "\nerror: %s" % [ error ] if error
+    exit 0
 end
 
+options = {
+  :networks         => [],
+  :security_group   => []
+}
 
-usage() {
-  cat <<EOF
-  Usage: $(basename $0) -H HOSTNAME -i IMAGE -f FLAVOR -n NETWORK 
-    -H|--hostname HOSTNAME      : the hostname you wish to associate to the instance
-    -i|--image IMAGE            : the name of the image to boot from 
-    -f|--flavor FLAVOR          : the openstack flavor you wish to use 
-    -n|--network NETWORK        : the network the instance should be associate to (can use multiples)
-    -k|--keypair KEYPAIR        : the name of the keypair to use on the instance (defaults to $KEYPAIR)
-    -a|--hypervisor HOST        : specify the hypervisor the instance should live on 
-    -O|--openrc FILE            : the location of openstack credentials file 
-    -v|--verbose                : switch verbose mode on
-    -h|--help                   : display this help menu
+Parser  = OptionParser::new do |o|
+  o.on( '-c CONFIG',      '--config CONFIG',          'the configuration file to read credentials' )    { |x|   options[:config]          =  x  }
+  o.on( '-H HOSTNAME',    '--hostname HOSTNAME',      'the hostname of instance you are creating' )     { |x|   options[:hostname]        =  x  }
+  o.on( '-i IMAGE',       '--image IMAGE',            'the image you wish to boot from' )               { |x|   options[:image]           =  x  }
+  o.on( '-f FLAVOR',      '--flavor FLAVOR',          'the flavor the instance should work from' )      { |x|   options[:flavor]          =  x  }
+  o.on( '-k KEYPAIR',     '--keypair KEYPAIR',        'the keypair the instance should use' )           { |x|   options[:keypair]         =  x  }
+  o.on( '-n NETWORK',     '--network NETWORK',        'the network the instance should be connected' )  { |x|   options[:networks]        << x  }
+  o.on( '-s SECURITY',    '--secgroups SECURITY',     'the security group assigned to the instance' )   { |x|   options[:security_group]  << x  } 
+  o.on( '-u USER_DATA',   '--user-data USER_DATA',    'the user data template' )                        { |x|   options[:user_data]       =  x  }
+  o.on( nil,              '--hypervisor HOST',        'the compute node you want the instance to run' ) { |x|   options[:hypervisor]      =  x  }
+  o.on( '-h',             '--help' ) { usage }
+end
+Parser.parse!
 
+begin
+  # step: check we have everything we need
+  raise ArgumentError, 'you have not specified a configuration for openstack-build'   unless options[:config]
+  [ :hostname, :image, :flavor, :keypair, :user_data ].each do |x| 
+    raise ArgumentError, 'you have not specified %s, please check usage' % [ x ]      unless options.has_key? x 
+  end
+  raise ArgumentError, 'you have not specified any networks to attach the instance to'   if options[:networks].empty?
+  raise ArgumentError, 'you have not specified any secgroups to attach the instance to'  if options[:secgroups].empty?
+  raise ArgumentError, 'the template file: %s does not exist'   % [ options[:user_data] ]  unless File.exists? options[:user_data]
+  raise ArgumentError, 'the template file: %s is not a file'    % [ options[:user_data] ]  unless File.file? options[:user_data
+  raise ArgumentError, 'the template file: %s is not readable'  % [ options[:user_data] ]  unless File.readable? options[:user_data]
+  # step: lets set the stack
+  stack = OpenstackBuild::load( { :config => options[:config], :stack  => 'hq' }
+  # step: make sure the instance does not already exist
+  raise ArgumentError, 'the instance: %s already exist, please use another name' % [ options[:hostname] ] if stack.exists? options[:hostname]
+  # step: lets build the user_data
+  user_data = ERB.new( IO.read( options[:user_data], nil, '-' ).result( binding )
+  # step: lets built the instance
+  stack.launch options[:hostname], options do |instance|
+    
+
+  end
+  
+rescue SystemExit => e 
+  exit e.status
+rescue Exception  => e 
+  usage e.message
+end

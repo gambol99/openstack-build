@@ -28,7 +28,7 @@ class Stack
   # Instance Operations
   # ========================================================================
 
-  def create hostname, options = {}
+  def launch hostname, options = {}, &block
     raise ArgumentError, 'you have not specified a hostname' unless hostname
     # step: check we have the minimum options
     [ :image, :flavor, :networks, :keypair, :security_group ].each do |x|
@@ -64,6 +64,18 @@ class Stack
     end
     # step: lets go ahead an create the instance
     @stack.compute.create_server hostname, compute_options
+    # step: if block given, wait for activation 
+    if block_given?
+      Timeout::timeout( 30 ) do 
+        loop do 
+          if active? hostname
+            yield instance( hostname )
+            break
+          end
+          sleep 0.3
+        end
+      end
+    end
   end
 
   def destroy hostname
