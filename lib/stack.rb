@@ -6,9 +6,8 @@
 #
 $:.unshift File.join(File.dirname(__FILE__),'.','./')
 require 'fog'
-require 'openstruct'
-require 'yaml'
 require 'config'
+require 'timeout'
 
 module OpenstackBuild
 class Stack
@@ -18,7 +17,11 @@ class Stack
   def initialize options = {}
     raise ArgumentError, 'you have not specified a configuration file in you options' unless options.config
     # step: load the configuration
-    @config = OpenstackBuild::Config::new options.config, options
+    @config  = OpenstackBuild::Config::new options.config, options
+    @options = options
+    # step: check the configuration
+    validate_config @config, options
+    # step: 
   end
 
   # ========================================================================
@@ -52,17 +55,15 @@ class Stack
     compute_options = {
       :image_ref    => image( options.image ).id,
       :flavor_ref   => flavor( options.flavor ).id,
-      :key_name     => keypair( options.keypair ).id
+      :key_name     => keypair( options.keypair ).id,
+      :nics         => []
     }
-
-    :image_ref  => find_image_by_name( 'centos-base-6.5-min-07-05-2014' ).id,
-    :flavor_ref => find_flavor_by_name( 'm1.small' ).id,
-    :key_name   => 'default',
-    :nics       => [ 'net_id' => '3838f44b-9064-401a-923e-1e5f1ba7d0b1' ]  
-    raise ArgumentError, 'the instance: %s already exists'    % [ hostname ]                unless exist? hostname
-    
-
-
+    # step: lets add the networks
+    options.networks.each do |net|
+      compute_options[:nics] << { 'net_id' => network( net ).id }
+    end
+    # step: lets go ahead an create the instance
+    @stack.compute.create_server hostname, compute_options
   end
 
   def destroy hostname
@@ -143,6 +144,22 @@ class Stack
     ( instance( name ).status =~ /ACTIVE/ ) ? true : false
   end
 
+  def addresses name, interval = 0.5, timeout = 30
+    raise ArgumentError, 'the instance: %s does not exist, please check'  % [ name ] unless exists? name 
+    begin
+      Timeout::timeout( timeout ) do  
+        loop do
+          if active? name
+            host      = instance.addresses  
+          end
+          sleep interval
+        end
+      end
+    rescue Timeout::Error => e 
+      raise Exception, 'we have timed out attempting to acquire the instance addresses'
+    end
+  end
+
   # ========================================================================
   # Images
   # ========================================================================
@@ -178,6 +195,11 @@ class Stack
   end
 
   private
+
+  def validate_config config, options 
+    raise ArgumentError, 'you have multiple openstack cluster defined in configuration, you must select one'  if config.stacks.size > 0 and !options.stack
+    raise ArgumentError, 'the stack: %s does not exist in configuration, please check' % [ options.stack ]    unless config.stacks.include? options.stack
+  end
 
   def connection openstack 
     @stack = {} unless @stack
