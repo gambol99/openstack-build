@@ -13,6 +13,7 @@ usage() {
     -n|--network NETWORK        : the network the instance should be associate to (can use multiples)
     -k|--keypair KEYPAIR        : the name of the keypair to use on the instance (defaults to $KEYPAIR)
     -a|--hypervisor HOST        : specify the hypervisor the instance should live on 
+    -u|--user_data URI          : a url to the user data you wish to pass to the instance
     -O|--openrc FILE            : the location of openstack credentials file 
     -W|--workspace DIRECTORY    : the location of the build workspace
     -v|--verbose                : switch verbose mode on
@@ -31,6 +32,7 @@ while [ $# -gt 0 ]; do
     -n|--network)   NETWORKS=( $NETWORKS $2 ) ; shift 2 ;;
     -d|--domain)    DOMAIN=$2                 ; shift 2 ;;
     -k|--keypair)   KEYPAIR=$2                ; shift 2 ;;
+    -u|--user_data) USER_DATA=$2              ; shift 2 ;;
     --hypervisor)   HYPERVISOR=$2             ; shift 2 ;;
     -O|--openrc)    OPENRC=$2                 ; shift 2 ;;
     -v|--verbose)   VERBOSE=1                 ; shift 1 ;;
@@ -44,6 +46,7 @@ HOSTNAME=${RD_OPTION_HOSTNAME:-$HOSTNAME}
 IMAGE=${RD_OPTION_IMAGE:-$IMAGE}
 FLAVOR=${RD_OPTION_FLAVOR:-$FLAVOR}
 NETWORKS=${RD_OPTION_NETWORKS:-$NETWORKS}
+USER_DATA=${RD_OPTION_USER_DATA:-$USER_DATA}
 KEYPAIR=${RD_OPTION_KEYPAOR:-$KEYPAIR}
 DOMAIN=${RD_OPTION_DOMAIN:-$DOMAIN}
 WORKSPACE=${RD_WORKSPACE:-$WORKSPACE_DEFAULT}
@@ -55,12 +58,13 @@ for i in logging openstack; do
 done
 
 # step: make sure we have all the arguments
-[ -z $HOSTNAME ] && error "you must specify the hostname of the instance"
-[ -z $DOMAIN   ] && error "you must specify the domain of the instance"
-[ -z $IMAGE    ] && error "you must specify the image of the instance"
-[ -z $FLAVOR   ] && error "you must specify the flavor of the instance"
-[ -z $NETWORKS ] && error "you must specify the network/s of the instance"
-[ -z $KEYPAIR  ] && error "you must specify the keypair of the instance"
+[ -z $HOSTNAME  ] && error "you must specify the hostname of the instance"
+[ -z $DOMAIN    ] && error "you must specify the domain of the instance"
+[ -z $IMAGE     ] && error "you must specify the image of the instance"
+[ -z $FLAVOR    ] && error "you must specify the flavor of the instance"
+[ -z $NETWORKS  ] && error "you must specify the network/s of the instance"
+[ -z $USER_DATA ] && error "you must specify the user data for the instance"
+[ -z $KEYPAIR   ] && error "you must specify the keypair of the instance"
 
 FQDN="${HOSTNAME}.${DOMAIN}"
 
@@ -94,12 +98,16 @@ if [ ! -n $HYPERVISOR ]; then
   hypervisor_exists $HYPERVISOR || error "the hypervisor: $HYPERVISOR does not exist, please check"
 fi
 
+TMPFILE=$(mktemp)
+trap "rm -f $TMPFILE" EXIT
+annonce "pulling the user data from: $USER_DATA"
+curl -o "$TMPFILE" -sk "$USER_DATA"
+
 annonce "booting the instance: $FQDN, image: $IMAGE, flavor: $FLAVOR"
-OPTIONS="--image ${IMAGE} --flavor ${FLAVOR} --key-name $KEYPAIR $NETWORK_ID "
+OPTIONS="--image ${IMAGE} --flavor ${FLAVOR} --key-name $KEYPAIR $NETWORK_ID --user-data $TMPFILE "
 [ -z $HYPERVISOR ] || OPTIONS="$OPTIONS --availability-zone nova:$HYPERVISOR "
 
 $NOVA boot $OPTIONS $FQDN
 [ $? -ne 0 ] && error "we have a problem booting the image"
 
 annonce "succesfully booted the image"
-

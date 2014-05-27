@@ -58,20 +58,26 @@ instance_exists $FQDN && error "unable to find the instance in openstack, please
 
 annonce "attempting to acquire the ip addresses of instance: $FQDN"
 # step: get the address from openstack - this might take multiple attempts
-for i in {1..5}; do 
-  ADDRESSES=$(addresses $FQDN)
-  if [ -z $ADDRESSES ]; then
-    annonce "the ip addresses are not available yet, waiting for instance to come up"
+annonce "checking the status of the build"
+
+INTERVAL=1
+
+for i in {1..10}; do 
+  if ! is_active $FQDN; then
+    annonce "the instance is not yet active, waiting for now"
+    sleep $INTERVAL
+    next
   else
-    for i in ${ADDRESSES[@]}; do
-      # step: make sure this is a valid ip address
-
-
-    done
-  
+    # step: it is active, lets get the addresses
+    ADDRESSES=$(addresses $FQDN)
+    if [ -z $ADDRESSES ]; then
+      annonce "the ip addresses are not available yet, lets wait for a bit"
+      sleep $INTERVAL
+      next
+    fi 
+    annonce "we have addresses: $ADDRESSES for instance: $HOSTNAME"
   fi
-  sleep 2
 done
 
-
+# step: add the ip addresses into DNS
 
