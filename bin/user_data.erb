@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+#   Author: Rohith
+#   Date: 2014-05-28 12:23:56 +0100 (Wed, 28 May 2014)
+#
+#  vim:ts=4:sw=4:et
+#
+
+hostname <%= @options[:hostname] %>
+sed -i 's/HOSTNAME=.*/HOSTNAME=<%= @options[:hostname] %>/' /etc/sysconfig/network
+
+cat <<EOF > /etc/resolv.conf
+domain <%= @host.domain %>
+search <%= @host.domain %>
+<%- YAML.load(@host.params["resolver::nameservers"]).each do |ns| -%>
+nameserver <%= ns %>
+<%- end -%>
+EOF
+
+<%= snippet 'bootstrap_puppet' %>

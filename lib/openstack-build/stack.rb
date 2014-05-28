@@ -8,20 +8,27 @@ $:.unshift File.join(File.dirname(__FILE__),'.','./')
 require 'fog'
 require 'config'
 require 'timeout'
+require 'utils'
+require 'cache'
+require 'pp'
 
 module OpenstackBuild
 class Stack
 
-  attr_reader :options, :stack, :config
+  include OpenstackBuild::Utils 
+
+  attr_reader :options, :stack, :config, :stack_config
 
   def initialize options = {}
     raise ArgumentError, 'you have not specified a configuration file in you options' unless options.config
     # step: load the configuration
     @config  = OpenstackBuild::Config::new options.config, options
     @options = options
+    @cache   = OpenstackBuild::Cache::new 
     # step: check the configuration
-    validate_config @config, options
-    # step: 
+    @stack_config = validate_config @config, options
+    # step: get a connection
+    @stack = connection @stack_config
   end
 
   # ========================================================================
@@ -53,9 +60,10 @@ class Stack
     end
     # step: ok, lets build the instance
     compute_options = {
+      :name         => hostname,
       :image_ref    => image( options.image ).id,
       :flavor_ref   => flavor( options.flavor ).id,
-      :key_name     => keypair( options.keypair ).id,
+      :key_name     => options.keypair,
       :nics         => []
     }
     # step: lets add the networks
@@ -63,13 +71,13 @@ class Stack
       compute_options[:nics] << { 'net_id' => network( net ).id }
     end
     # step: lets go ahead an create the instance
-    @stack.compute.create_server hostname, compute_options
+    @stack.compute.servers.create compute_options
     # step: if block given, wait for activation 
     if block_given?
       Timeout::timeout( 30 ) do 
         loop do 
           if active? hostname
-            yield instance( hostname )
+            yield server( hostname )
             break
           end
           sleep 0.3
@@ -139,37 +147,48 @@ class Stack
   # ========================================================================
 
   def exists? name 
-    instances.include? name
+    servers.include? name
   end
 
-  def instance name 
+  def server name 
     raise ArgumentError, 'the instance: %s does not exists'  unless exists? name 
     @stack.compute.servers.select { |x| x if x.name == name }.first
   end
 
-  def instances 
+  def servers 
     @stack.compute.servers.map { |x| x.name } 
   end
 
-  def active?
+  def active? name
     raise ArgumentError, 'the instance: %s does not exists'  unless exists? name 
-    ( instance( name ).status =~ /ACTIVE/ ) ? true : false
+    ( server( name ).state =~ /ACTIVE/ ) ? true : false
   end
 
-  def addresses name, interval = 0.5, timeout = 30
+  def server_networks name 
+    raise ArgumentError, 'the instance: %s does not exists'  unless exists? name 
+    server( name ).addresses.keys
+  end
+
+  def addresses name, interval = 0.2, timeout = 15
     raise ArgumentError, 'the instance: %s does not exist, please check'  % [ name ] unless exists? name 
+    list = []
     begin
+      host = nil
       Timeout::timeout( timeout ) do  
         loop do
-          if active? name
-            host      = instance.addresses  
-          end
+          host  = server( name ) if active? name 
+          break if host
           sleep interval
         end
+      end
+      # step: we need to parse the structure
+      host.addresses.each_pair do |name,addrs|
+        addrs.each { |net| list << net['addr'] }
       end
     rescue Timeout::Error => e 
       raise Exception, 'we have timed out attempting to acquire the instance addresses'
     end
+    list
   end
 
   # ========================================================================
@@ -211,6 +230,7 @@ class Stack
   def validate_config config, options 
     raise ArgumentError, 'you have multiple openstack cluster defined in configuration, you must select one'  if config.stacks.size > 0 and !options.stack
     raise ArgumentError, 'the stack: %s does not exist in configuration, please check' % [ options.stack ]    unless config.stacks.include? options.stack
+    config.stack options.stack
   end
 
   def connection openstack 
@@ -227,6 +247,7 @@ class Stack
       :openstack_username   => openstack.username,
       :openstack_tenant     => openstack.tenant
     )
+    @stack
   end
 
 end
