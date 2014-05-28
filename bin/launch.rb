@@ -11,7 +11,6 @@ require 'openstack-build'
 require 'optparse'
 require 'colorize'
 require 'erb'
-require 'pp'
 
 def usage message = nil
   puts Parser
