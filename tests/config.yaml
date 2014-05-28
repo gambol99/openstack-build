@@ -34,3 +34,25 @@ templates:
         tags: '<%= node['cluster'] -%>, <%= node['tags'].join(\',\'') %>'
         username: '<%= node['owner'] %>'
       <%- end -%>
+
+dns:
+  foreman:
+    hq: &hq-proxy
+      api: http://foreman.hq.noths.com:8443
+      username: rohithj
+      password: v34Cmkar
+    uk1: &uk1-proxy
+      api: http://foreman.uk1.noths.com:8443
+      username: test
+      password: bang
+  hq.noths.com: 
+    << *hq-proxy
+    enable: true
+    subnets:
+      - 10.100.0.0/24
+      - 10.99.0.0/24
+  ext.hq.noths.com:
+    << *hq-proxy
+    enable: false
+    subnets:
+      - 192.168.19.0/24

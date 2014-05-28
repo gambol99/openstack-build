@@ -12,6 +12,8 @@ require 'optparse'
 require 'colorize'
 require 'erb'
 
+STDOUT.sync = true
+
 def usage message = nil
   puts Parser
   puts "\nerror: %s".red % [ message ] if message
