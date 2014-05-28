@@ -5,16 +5,18 @@
 #
 #  vim:ts=4:sw=4:et
 #
-
-hostname <%= @options[:hostname] %>
-sed -i 's/HOSTNAME=.*/HOSTNAME=<%= @options[:hostname] %>/' /etc/sysconfig/network
+<%-
+  hostname = @options[:hostname]
+  domain   = @options[:domain]
+-%>
+hostname <%= hostname %>
+sed -i 's/HOSTNAME=.*/HOSTNAME=<%= hostname %>/' /etc/sysconfig/network
 
 cat <<EOF > /etc/resolv.conf
-domain <%= @host.domain %>
-search <%= @host.domain %>
-<%- YAML.load(@host.params["resolver::nameservers"]).each do |ns| -%>
-nameserver <%= ns %>
-<%- end -%>
+domain <%= domain %>
+search <%= domain %>
+nameserver 192.168.14.4
 EOF
 
-<%= snippet 'bootstrap_puppet' %>
+curl https://boot.noths.com | bash -s agent hq production 2>&1 | tee /root/install.post.log
+

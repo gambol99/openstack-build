@@ -35,39 +35,43 @@ class Stack
   # Instance Operations
   # ========================================================================
 
-  def launch hostname, options = {}, &block
+  def launch hostname, o = {}, &block
     raise ArgumentError, 'you have not specified a hostname' unless hostname
-    # step: check we have the minimum options
+    # step: check we have the minimum o
     [ :image, :flavor, :networks, :keypair, :security_group ].each do |x|
-      raise ArgumentError, 'you have not specified the %s field' % [ x ] unless options.has_key? x 
+      raise ArgumentError, 'you have not specified the %s field' % [ x ] unless o.has_key? x 
     end
     # step: check everything exists
-    raise ArgumentError, 'networks field should be a array'   % [ options.networks ]        unless options.networks.is_a? Array
-    raise ArgumentError, 'the networks field is empty'        % [ options.networks ]        unless !options.networks.empty?
-    raise ArgumentError, 'security group should be a array'   % [ options.security_group ]  unless options.security_group.is_a? Array
-    raise ArgumentError, 'the security_group field is empty'  % [ options.security_group ]  unless !options.security_group.empty?
-    raise ArgumentError, 'the image: %s does not exist'       % [ options.image ]           unless image? options.image
-    raise ArgumentError, 'the flavor: %s does not exist'      % [ options.flavor ]          unless flavor? options.flavor
-    if options.volume
-      raise ArgumentError, 'the volume: %s does not exist'      % [ options.volume ]        unless volume? options.volume
+    raise ArgumentError, 'networks field should be a array'   % [ o.networks ]        unless o.networks.is_a? Array
+    raise ArgumentError, 'the networks field is empty'        % [ o.networks ]        unless !o.networks.empty?
+    raise ArgumentError, 'security group should be a array'   % [ o.security_group ]  unless o.security_group.is_a? Array
+    raise ArgumentError, 'the security_group field is empty'  % [ o.security_group ]  unless !o.security_group.empty?
+    raise ArgumentError, 'the image: %s does not exist'       % [ o.image ]           unless image? o.image
+    raise ArgumentError, 'the flavor: %s does not exist'      % [ o.flavor ]          unless flavor? o.flavor
+    if o.volume
+      raise ArgumentError, 'the volume: %s does not exist'    % [ o.volume ]          unless volume? o.volume
     end
     # step: we need to check the networks and security groups
-    options.networks.each do |net|
+    o.networks.each do |net|
       raise ArgumentError, 'the network: %s does not exist' % [ net ] unless network? net
     end
-    options.security_group.each do |sec|
+    o.security_group.each do |sec|
       raise ArgumentError, 'the security_group: %s does not exist' % [ sec ] unless security_group? sec
     end
     # step: ok, lets build the instance
     compute_options = {
       :name         => hostname,
-      :image_ref    => image( options.image ).id,
-      :flavor_ref   => flavor( options.flavor ).id,
-      :key_name     => options.keypair,
+      :image_ref    => image( o.image ).id,
+      :flavor_ref   => flavor( o.flavor ).id,
+      :key_name     => o.keypair,
       :nics         => []
     }
+    # step: set the availability_zone if defined
+    compute_options[:availability_zone] = "nova:%s" % [ o[:availability_zone] ] if o[:availability_zone]
+    # step: the user data
+    compute_options[:user_data] = o[:user_data] if o[:user_data]
     # step: lets add the networks
-    options.networks.each do |net|
+    o.networks.each do |net|
       compute_options[:nics] << { 'net_id' => network( net ).id }
     end
     # step: lets go ahead an create the instance
@@ -89,6 +93,25 @@ class Stack
   def destroy hostname
 
 
+  end
+
+  # ========================================================================
+  # Compute Resources
+  # ========================================================================
+  def compute hostname 
+    raise ArgumentError, 'the compute host: %s does not exist' % [ hostname ] unless compute? hostname
+    @stack.compute.get_host_details( hostname ).body
+  end
+
+  def computes 
+    @stack.compute.list_hosts.body['hosts'].inject([]) do |a,host|
+      a << host['host_name'] if host['service'] == 'compute'
+      a 
+    end
+  end
+
+  def compute? hostname 
+    computes.include? hostname
   end
 
   # ========================================================================
