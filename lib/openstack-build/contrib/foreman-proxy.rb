@@ -7,7 +7,6 @@
 require 'uri'
 
 module OpenstackBuild
-module Contrib
 class ForemanProxy
 
   include HTTParty
@@ -52,6 +51,5 @@ class ForemanProxy
     options
   end
 
-end
 end
 end
