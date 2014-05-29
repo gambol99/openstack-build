@@ -65,10 +65,10 @@ class Config
       end
     end
     # step: lets validate templates or inject the default one
-    if !config.has_key? 'templates' or config['templates'].nil? and !options.template
-      # we have no templates in config and the user has not specified any
-      raise ArgumentError, 'there is no templates in configuration and you have not specified a custom template'
-    end
+    #if !config.has_key? 'templates' or config['templates'].nil? and !options.template
+    #  # we have no templates in config and the user has not specified any
+    #  raise ArgumentError, 'there is no templates in configuration and you have not specified a custom template'
+    #end
     config
   end
 
