@@ -220,7 +220,7 @@ class Stack
   # ========================================================================
 
   def image name 
-    raise ArgumentError, 'the image: %s does not exists'  unless image? name 
+    raise ArgumentError, "the image: #{name} does not exists" unless image? name 
     @stack.compute.images.select { |x| x if x.name == name }.first
   end
 
@@ -230,6 +230,24 @@ class Stack
 
   def image? name
     !@stack.compute.images.select { |x| x if x.name == name }.empty?
+  end
+
+  def delete_image name 
+    source_image = image name 
+    @stack.compute.delete_image source_image.id 
+  end
+
+  # ========================================================================
+  # Snapshots
+  # ========================================================================
+
+  def snapshot hostname, snapshot, force = false
+    instance = server hostname
+    if !force and image? snapshot
+      raise ArgumentError, "the snapshot / image name: #{snapshot} already exists"
+    end
+    delete_image snapshot if image? snapshot
+    @stack.compute.create_image instance.id, snapshot
   end
 
   # ========================================================================
@@ -248,6 +266,41 @@ class Stack
   def flavor? name
     !@stack.compute.flavors.select { |x| x if x.name == name }.empty?
   end
+
+  # ========================================================================
+  # Load Balancer Pools
+  # ========================================================================
+
+  def pool name 
+    raise ArgumentError, "the pool: #{name} does not exists" unless pool? name 
+    @stack.network.list_lb_pools.body['pools'].select { |x| x if x['name'] == name }.first
+  end
+
+  def pools 
+    @stack.network.list_lb_pools.body['pools'].map { |x| x['name'] }
+  end
+
+  def pool_active? name 
+    pool( name )['admin_state_up']
+  end
+
+  def pool_status? name 
+    pool( name )['status']
+  end
+
+  def pool_members name 
+    pool( name )['members']
+  end
+
+  def pool? name 
+    !@stack.network.list_lb_pools.body['pools'].select { |x| x if x['name'] == name }.empty?
+  end
+
+  # ========================================================================
+  # Load Balancer Members
+  # ========================================================================
+
+
 
   private
 
