@@ -91,8 +91,9 @@ class Stack
   end
 
   def destroy hostname
-
-
+    # step: check the instance exists?
+    raise ArgumentError, "the instance: #{hostname} does not exist, please check" unless exists? hostname
+    @stack.compute.delete_server( server( hostname ).id )
   end
 
   # ========================================================================
