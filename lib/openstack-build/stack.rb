@@ -300,8 +300,44 @@ class Stack
   # Load Balancer Members
   # ========================================================================
 
+  def add_member pool_name, member 
+    # step: validate the options
+    pool = pool pool_name
+    [ :hostname, :port, :weight, :state ].each do |x|
+      raise ArgumentError, "you have not specified a value for #{x}" unless member.has_key? x
+    end
+    raise ArgumentError, "the member state: #{member.state} is invalid" unless member_states.include? member.state
+    member.port   = validate_integer member.port, 1, 65535
+    member.weight = validate_integer member.weight, 1, 100
+    # step: check if the host is already a member
+    if member_of? pool_name, member.hostname, member.port
+      raise ArgumentError, "the hostname: #{member.hostname}, port: #{member.port} is already a member of #{pool_name}"
+    end
+    # step: ok, lets add it to the pool
+    instance = server member.hostname
+    @stack.create_lb_member pool.id, addresses( instance.name ).first, member.port, { :admin_state_up => member.state }
+  end
 
+  # method: pull the member details
+  def member id 
+    @state.get_lb_member( id ).body['member']
+  end
 
+  # method: check to see if the host instance is a member of the pool
+  def member_of? pool_name, hostname, port
+    raise ArgumentError, "the hostname: #{hostname} does not exists" unless exists? hostname
+    instance_addresss = addresses hostname
+    pool_members.each do |x|
+      pool_member = member x
+      if instance_addresss.include? pool_member['address'] and pool_member['protocol_port'] == port
+        raise ArgumentError, "the hostname: #{hostname} is already a member of pool: #{pool_member}"
+      end
+    end
+  end
+
+  def member_states
+    %w(up down)
+  end
   private
 
   def validate_config config, options 
