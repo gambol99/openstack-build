@@ -329,8 +329,8 @@ class Stack
   def member_states
     %w(up down)
   end
-  private
 
+  private
   def validate_options options = {}
     [ :username, :tenant, :api_key, :auth_url ].each do |x|
       raise ArgumentError, 'the credentials are incomplete, you must have the %s field' % [ x ] unless options.has_key? x 
