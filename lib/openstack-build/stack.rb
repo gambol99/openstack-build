@@ -6,11 +6,8 @@
 #
 $:.unshift File.join(File.dirname(__FILE__),'.','./')
 require 'fog'
-require 'config'
 require 'timeout'
 require 'utils'
-require 'cache'
-require 'pp'
 
 module OpenstackBuild
 class Stack
@@ -20,15 +17,9 @@ class Stack
   attr_reader :options, :stack, :config, :stack_config
 
   def initialize options = {}
-    raise ArgumentError, 'you have not specified a configuration file in you options' unless options.config
-    # step: load the configuration
-    @config  = OpenstackBuild::Config::new options.config, options
-    @options = options
-    @cache   = OpenstackBuild::Cache::new 
-    # step: check the configuration
-    @stack_config = validate_config @config, options
+    @options = validate_options options
     # step: get a connection
-    @stack = connection @stack_config
+    @stack = connection @options
   end
 
   # ========================================================================
@@ -241,13 +232,13 @@ class Stack
   # Snapshots
   # ========================================================================
 
-  def snapshot hostname, snapshot, force = false
+  def snapshot hostname, snapshot, force = false, &block
     instance = server hostname
     if !force and image? snapshot
       raise ArgumentError, "the snapshot / image name: #{snapshot} already exists"
     end
     delete_image snapshot if image? snapshot
-    @stack.compute.create_image instance.id, snapshot
+    @stack.compute.create_image instance.id, snapshot unless block_given?
   end
 
   # ========================================================================
@@ -340,12 +331,13 @@ class Stack
   end
   private
 
-  def validate_config config, options 
-    raise ArgumentError, 'you have multiple openstack cluster defined in configuration, you must select one'  if config.stacks.size > 0 and !options.stack
-    raise ArgumentError, 'the stack: %s does not exist in configuration, please check' % [ options.stack ]    unless config.stacks.include? options.stack
-    config.stack options.stack
+  def validate_options options = {}
+    [ :username, :tenant, :api_key, :auth_url ].each do |x|
+      raise ArgumentError, 'the credentials are incomplete, you must have the %s field' % [ x ] unless options.has_key? x 
+    end
+    options
   end
-
+  
   def connection openstack 
     @stack = {} unless @stack
     @stack[:compute] = ::Fog::Compute.new( :provider => :OpenStack,

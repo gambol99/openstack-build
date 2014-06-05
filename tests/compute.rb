@@ -25,10 +25,12 @@ end
 
 begin 
   options = {
-    :stack  => 'qa',
-    :config => './config.yaml'
+    :username   => 'admin',
+    :tenant     => 'admin',
+    :api_key    => 'secrete',
+    :auth_url   => 'http://horizon.hq.noths.com:5000/v2.0/tokens'
   }
-  stack = OpenstackBuild.load( options )
+  stack = OpenstackBuild.new( options )
 
   start_time = Time.now
 

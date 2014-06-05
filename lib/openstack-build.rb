@@ -5,7 +5,9 @@
 #
 #  vim:ts=2:sw=2:et
 #
+
 module OpenstackBuild
+
   ROOT = File.expand_path File.dirname __FILE__
 
   require "#{ROOT}/openstack-build/version"
@@ -20,8 +22,9 @@ module OpenstackBuild
     OpenstackBuild::VERSION
   end 
 
-  def self.load options 
+  def self.new options 
     OpenstackBuild::Stack::new( options )
   end
+
 end
 
