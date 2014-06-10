@@ -207,6 +207,93 @@ class Stack
   end
 
   # ========================================================================
+  # Floating ips
+  # ========================================================================
+  
+  # class OpenstackBuild::Stack 
+  def float address 
+    raise ArgumentError, "the ipaddress: #{address} is not a valid ipaddress" unless ipaddress? address
+    raise ArgumentError, "the ipaddress: #{address} does not exist"           unless float? address
+    @stack.network.list_floating_ips.body['floatingips'].select { |float| float if float['floating_ip_address'] == address }.first
+  end
+
+  def floats
+    @stack.network.list_floating_ips.body['floatingips'].map { |float| float['floating_ip_address'] }
+  end
+
+  def floating hostname 
+    raise ArgumentError, "the instance: #{hostname} does not exist"   unless exists? hostname
+    server( hostname ).addresses['private_net'].select { |address|
+      address if address['OS-EXT-IPS:type'] == 'floating'
+      }.map { |address| address['addr'] }    
+  end
+
+  def floats_free
+    @stack.network.list_floating_ips.body['floatingips'].select { |float|
+      float if float['port_id'].nil?
+      }.map { |float| float['floating_ip_address'] }.sort
+  end
+
+  def associate hostname, floating_ip = nil, ip_address = nil
+    raise ArgumentError, "the instance: #{hostname} does not exist"   unless exists? hostname
+    if floating_ip.nil?
+      # step: no floating ip assigned - lets assign the first free one
+      floating_ip = self.floats_free.first
+      raise ArgumentError, "there are no free floating ip addresses left" unless floating_ip
+    else
+      # step: check the floating ip address is free
+      raise ArgumentError, "the floating ip address: #{floating_ip} is not free" unless free? floating_ip
+    end
+    # step: we need to get our port
+    instance_ports = ports hostname
+    raise ArgumentError, "the hostname: #{hostname} does not have any network ports" unless !instance_ports.empty?
+    if instance_ports.size > 1 and ip_address.nil?
+      raise ArgumentError, "the hsot: #{hostname} has multiple port, we need to know which port your assigning"
+    end
+    instance_float_id = float( floating_ip ).id
+    instance_port_id  = instance_ports.first
+    result = @stack.network.associate_floating_ip instance_float_id, instance_port_id
+    result.body['floatingip']['floating_ip_address']
+  end
+
+  def deassociate hostname 
+    raise ArgumentError, "the instance: #{hostname} does not exist"   unless exists? hostname
+    raise ArgumentError, "the instance: #{hostname} is not floating"  unless floating? hostname
+    floating( hostname ).each do |address|
+      raise ArgumentError, "the floating_ip: #{address} doesnt appear to exist" unless float? address
+      @stack.network.disassociate_floating_ip( float( address ).id )
+    end
+  end
+
+  def free? ipaddress
+    floats_free.include? ipaddress
+  end
+  
+  def floating? hostname 
+    raise ArgumentError, "the instance: #{hostname} does not exist"   unless exists? hostname
+    !floating( hostname ).empty?
+  end
+
+  def float? address
+    !@stack.network.list_floating_ips.body['floatingips'].select { |float|
+      float if float['floating_ip_address'] =~ /^#{address}$/
+    }.empty?
+  end
+
+  # ========================================================================
+  # Ports
+  # ========================================================================
+  def ports hostname 
+    raise ArgumentError, "the instance: #{hostname} does not exist"   unless exists? hostname
+    device_id = server( hostname ).id 
+    @stack.network.list_ports.body['ports'].select { |port|
+        port if port['device_id'] == device_id
+      }.map { |port|  
+        port['id']
+      }
+  end
+
+  # ========================================================================
   # Images
   # ========================================================================
 
