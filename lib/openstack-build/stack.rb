@@ -333,7 +333,9 @@ class Stack
   private
   def validate_options options = {}
     [ :username, :tenant, :api_key, :auth_url ].each do |x|
-      raise ArgumentError, 'the credentials are incomplete, you must have the %s field' % [ x ] unless options.has_key? x 
+      if !options.has_key? x and options.has_key? x.to_s
+        raise ArgumentError, 'the credentials are incomplete, you must have the %s field' % [ x ] 
+      end
     end
     options
   end
