@@ -15,6 +15,8 @@ class Hash
   end
 end
 
+require 'ipaddr'
+
 module OpenstackBuild
 module Utils
 
@@ -40,6 +42,15 @@ module Utils
     raise ArgumentError, "the #{name} cannot be less than #{min}"     if int_value < min
     raise ArgumentError, "the #{name} cannot be greater than #{min}"  if int_value > max 
     int_value
+  end
+
+  def ipaddress? address
+    begin 
+      ipaddr = IPAddr.new( address )
+      true
+    rescue IPAddr::InvalidAddressError => e 
+      false
+    end
   end
 
 
