@@ -81,7 +81,7 @@ class Stack
     end
   end
 
-  [ :reboot, :pause, :resume, :suspend, :unpause ].each do |m|
+  [ :reboot, :pause, :resume, :suspend, :unpause, :rebuild ].each do |m|
     define_method x do |hostname|
       server_exists hostname
       @stack.compute.send "#{x}_server", server( hostname ).id
