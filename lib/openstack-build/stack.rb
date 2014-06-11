@@ -81,6 +81,13 @@ class Stack
     end
   end
 
+  [ :reboot, :pause, :resume, :suspend, :unpause ].each do |m|
+    define_method x do |hostname|
+      server_exists hostname
+      @stack.compute.send "#{x}_server", server( hostname ).id
+    end
+  end
+
   def destroy hostname
     # step: check the instance exists?
     raise ArgumentError, "the instance: #{hostname} does not exist, please check" unless exists? hostname
@@ -165,13 +172,17 @@ class Stack
     servers.include? name
   end
 
+  alias_method server?, exists?
+
   def server name 
     raise ArgumentError, 'the instance: %s does not exists'  unless exists? name 
     @stack.compute.servers.select { |x| x if x.name == name }.first
   end
 
-  def servers 
-    @stack.compute.servers.map { |x| x.name } 
+  def servers filter = '.*'
+    @stack.compute.servers.select { |host|
+      host if host =~ /#{filter}/
+    }.map { |x| x.name } 
   end
 
   def active? name
@@ -298,7 +309,7 @@ class Stack
   # ========================================================================
 
   def image name 
-    raise ArgumentError, "the image: #{name} does not exists" unless image? name 
+    image_exists name 
     @stack.compute.images.select { |x| x if x.name == name }.first
   end
 
@@ -418,6 +429,14 @@ class Stack
   end
 
   private
+  
+  [ :server, :image, :flavor, :network ].each do |x|
+    define_method "#{x}_exists" do |value|
+      raise ArgumentError, "the #{x}: #{value} does not exists, please change" unless self.send "#{x}?", value
+    end
+  end
+
+
   def validate_options options = {}
     [ :username, :tenant, :api_key, :auth_url ].each do |x|
       if !options.has_key? x and !options.has_key? x.to_s
