@@ -27,8 +27,8 @@ begin
   options = {
     :username   => 'admin',
     :tenant     => 'admin',
-    :api_key    => 'secrete',
-    :auth_url   => 'http://horizon.hq.noths.com:5000/v2.0/tokens'
+    :api_key    => 'password',
+    :auth_url   => 'http://horizon.domain.com:5000/v2.0/tokens'
   }
   stack = OpenstackBuild.new( options )
 

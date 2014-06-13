@@ -174,8 +174,8 @@ class Stack
 
   alias_method server?, exists?
 
-  def server name 
-    raise ArgumentError, 'the instance: %s does not exists'  unless exists? name 
+  def server hostname
+    server_exists hostname
     @stack.compute.servers.select { |x| x if x.name == name }.first
   end
 
@@ -185,9 +185,9 @@ class Stack
     }.map { |x| x.name } 
   end
 
-  def active? name
-    raise ArgumentError, 'the instance: %s does not exists'  unless exists? name 
-    ( server( name ).state =~ /ACTIVE/ ) ? true : false
+  def active? hostname
+    server_exists hostname
+    server( hostname ).ready?
   end
 
   def server_networks name 
