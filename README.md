@@ -1,6 +1,7 @@
 Openstack Build
 ---------------------
-Is a small gem library which wraps fog and is used to ease the working with openstack - effectively they are shorthand or helper methods 
+
+Is a library which wraps the fog.io openstack driver; used ease working with openstack - effectively the library contains shorthand / helper methods 
 
 ---------
 
