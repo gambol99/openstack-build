@@ -4,55 +4,9 @@ openstack:
     username: admin
     tenant: admin
     api_key: secrete
-    auth_url: http://horizon.hq.noths.com:5000/v2.0/tokens 
+    auth_url: http://horizon.qa.domain.com:5000/v2.0/tokens 
   - name: prod
     username: admin
     tenant: admin
     api_key: something
-    auth_url: http://horizon.uk1.noths.com:5000/v2.0/tokens 
-tags:
-  '.*':
-    - openstack
-  '^wiki.*': 
-    - web 
-    - noths_web_server
-  '^qa[0-9]{3}-[a-z0-9]{3}':
-    - qa_server
-    - web
-templates:
-  - name: resourceyaml
-    template: |
-      ---
-      <%= node['hostname'] %>:
-        description: <%= node['description'] %> 
-        hostname: <%= node['hostname'] %> 
-        nodename: <%= node['hostname'] %> 
-        osArch: <%= node['os_arch'] %> 
-        osFamily: <%= node['os_family'] %> 
-        osName: <%= node['os_name'] %> 
-        osVersion: <%= node['os_version'] %> 
-        tags: '<%= node['cluster'] -%>, <%= node['tags'].join(\',\'') %>'
-        username: '<%= node['owner'] %>'
-      <%- end -%>
-
-dns:
-  foreman:
-    hq: &hq-proxy
-      api: http://foreman.hq.noths.com:8443
-      username: rohithj
-      password: something
-    uk1: &uk1-proxy
-      api: http://foreman.uk1.noths.com:8443
-      username: test
-      password: something
-  hq.noths.com: 
-    << *hq-proxy
-    enable: true
-    subnets:
-      - 10.100.0.0/24
-      - 10.99.0.0/24
-  ext.hq.noths.com:
-    << *hq-proxy
-    enable: false
-    subnets:
-      - 192.168.19.0/24
+    auth_url: http://horizon.domain.com:5000/v2.0/tokens 
