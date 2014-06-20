@@ -82,9 +82,9 @@ class Stack
   end
 
   [ :reboot, :pause, :resume, :suspend, :unpause, :rebuild ].each do |m|
-    define_method x do |hostname|
+    define_method m do |hostname|
       server_exists hostname
-      @stack.compute.send "#{x}_server", server( hostname ).id
+      @stack.compute.send "#{m}_server", server( hostname ).id
     end
   end
 
@@ -169,16 +169,18 @@ class Stack
     servers.include? name
   end
 
-  alias_method server?, exists?
+  alias_method :server?, :exists?
 
   def server hostname
     server_exists hostname
-    @stack.compute.servers.select { |x| x if x.name == name }.first
+    @stack.compute.servers.select { |x| 
+      x if x.name == hostname or x.id == hostname
+    }.first
   end
 
   def servers filter = '.*'
     @stack.compute.servers.select { |host|
-      host if host =~ /#{filter}/
+      host.name =~ /#{filter}/ or host.id == filter
     }.map { |x| x.name } 
   end
 
