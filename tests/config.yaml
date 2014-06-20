@@ -1,0 +1,12 @@
+---
+openstack:
+  - name: qa
+    username: admin
+    tenant: admin
+    api_key: secrete
+    auth_url: http://horizon.qa.domain.com:5000/v2.0/tokens 
+  - name: prod
+    username: admin
+    tenant: admin
+    api_key: something
+    auth_url: http://horizon.domain.com:5000/v2.0/tokens 
