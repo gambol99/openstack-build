@@ -116,7 +116,6 @@ class Stack
   # ========================================================================
   # Security Groups
   # ========================================================================
-
   def security_group name 
     raise ArgumentError, 'the security_group: %s does not exists'  unless security_group? name 
     @stack.compute.security_groups.select { |x| x if x.name == name }.first
@@ -133,7 +132,6 @@ class Stack
   # ========================================================================
   # Keypairs
   # ========================================================================
-
   def keypair name 
     raise ArgumentError, 'the keypair: %s does not exists'  unless keypair? name 
     @stack.compute.key_pairs.select { |x| x if x.name == name }.first
@@ -150,7 +148,6 @@ class Stack
   # ========================================================================
   # Networks
   # ========================================================================
-
   def network name 
     raise ArgumentError, 'the network: %s does not exists'  unless network? name 
     @stack.network.networks.select { |x| x if x.name == name }.first
@@ -220,8 +217,6 @@ class Stack
   # ========================================================================
   # Floating ips
   # ========================================================================
-  
-  # class OpenstackBuild::Stack 
   def float address 
     raise ArgumentError, "the ipaddress: #{address} is not a valid ipaddress" unless ipaddress? address
     raise ArgumentError, "the ipaddress: #{address} does not exist"           unless float? address
@@ -307,7 +302,6 @@ class Stack
   # ========================================================================
   # Images
   # ========================================================================
-
   def image name 
     image_exists name 
     @stack.compute.images.select { |x| 
@@ -333,7 +327,6 @@ class Stack
   # ========================================================================
   # Snapshots
   # ========================================================================
-
   def snapshot hostname, snapshot, force = false, &block
     instance = server hostname
     if !force and image? snapshot
@@ -346,7 +339,6 @@ class Stack
   # ========================================================================
   # Flavors
   # ========================================================================
-
   def flavor name 
     raise ArgumentError, 'the flavor: %s does not exists'  unless flavor? name  
     @stack.compute.flavors.select { |x| 
@@ -367,7 +359,6 @@ class Stack
   # ========================================================================
   # Load Balancer Pools
   # ========================================================================
-
   def pool name 
     raise ArgumentError, "the pool: #{name} does not exists" unless pool? name 
     @stack.network.list_lb_pools.body['pools'].select { |x| x if x['name'] == name }.first

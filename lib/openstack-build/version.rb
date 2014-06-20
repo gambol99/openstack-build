@@ -5,5 +5,5 @@
 #  vim:ts=4:sw=4:et
 #
 module OpenstackBuild
-  VERSION = '0.0.3'
+  VERSION = '0.0.4'
 end
