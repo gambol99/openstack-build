@@ -299,7 +299,9 @@ class Stack
 
   def image name 
     raise ArgumentError, "the image: #{name} does not exists" unless image? name 
-    @stack.compute.images.select { |x| x if x.name == name }.first
+    @stack.compute.images.select { |x| 
+      x if x.name == name or x.id == name  
+    }.first
   end
 
   def images
@@ -307,7 +309,9 @@ class Stack
   end
 
   def image? name
-    !@stack.compute.images.select { |x| x if x.name == name }.empty?
+    !@stack.compute.images.select { |x| 
+      x if x.name == name or x.id == name
+    }.empty?
   end
 
   def delete_image name 
@@ -334,7 +338,9 @@ class Stack
 
   def flavor name 
     raise ArgumentError, 'the flavor: %s does not exists'  unless flavor? name  
-    @stack.compute.flavors.select { |x| x if x.name == name }.first
+    @stack.compute.flavors.select { |x| 
+      x if x.name == name or x.id == name 
+    }.first
   end
 
   def flavors 
@@ -342,7 +348,9 @@ class Stack
   end
 
   def flavor? name
-    !@stack.compute.flavors.select { |x| x if x.name == name }.empty?
+    !@stack.compute.flavors.select { |x| 
+      x if x.name == name or x.id == name  
+    }.empty?
   end
 
   # ========================================================================
