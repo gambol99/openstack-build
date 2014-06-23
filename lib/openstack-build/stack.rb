@@ -149,8 +149,9 @@ class Stack
   # Networks
   # ========================================================================
   def network name 
-    raise ArgumentError, 'the network: %s does not exists'  unless network? name 
-    @stack.network.networks.select { |x| x if x.name == name }.first
+    @stack.network.networks.select { |x| 
+      x.name == name or x.id == name
+    }.first
   end
 
   def networks
@@ -158,7 +159,7 @@ class Stack
   end
 
   def network? name
-    !@stack.network.networks.select { |x| x if x.name == name }.empty?
+    !network( name ).empty?
   end
 
   # ========================================================================
@@ -166,13 +167,12 @@ class Stack
   # ========================================================================
 
   def exists? name 
-    servers.include? name
+    !server( name ).empty?
   end
 
   alias_method :server?, :exists?
 
   def server hostname
-    server_exists hostname
     @stack.compute.servers.select { |x| 
       x if x.name == hostname or x.id == hostname
     }.first
@@ -305,7 +305,6 @@ class Stack
   # Images
   # ========================================================================
   def image name 
-    image_exists name 
     @stack.compute.images.select { |x| 
       x if x.name == name or x.id == name  
     }.first
@@ -316,14 +315,12 @@ class Stack
   end
 
   def image? name
-    !@stack.compute.images.select { |x| 
-      x if x.name == name or x.id == name
-    }.empty?
+    !image( name ).empty?
   end
 
   def delete_image name 
-    source_image = image name 
-    @stack.compute.delete_image source_image.id 
+    image_exists? name 
+    @stack.compute.delete_image image( name ).id
   end
 
   # ========================================================================
