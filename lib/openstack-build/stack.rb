@@ -33,14 +33,14 @@ class Stack
       raise ArgumentError, 'you have not specified the %s field' % [ x ] unless o.has_key? x 
     end
     # step: check everything exists
-    raise ArgumentError, 'networks field should be a array'   % [ o.networks ]        unless o.networks.is_a? Array
-    raise ArgumentError, 'the networks field is empty'        % [ o.networks ]        unless !o.networks.empty?
-    raise ArgumentError, 'security group should be a array'   % [ o.security_group ]  unless o.security_group.is_a? Array
-    raise ArgumentError, 'the security_group field is empty'  % [ o.security_group ]  unless !o.security_group.empty?
-    raise ArgumentError, 'the image: %s does not exist'       % [ o.image ]           unless image? o.image
-    raise ArgumentError, 'the flavor: %s does not exist'      % [ o.flavor ]          unless flavor? o.flavor
+    raise ArgumentError, 'networks field should be a array'   unless o.networks.is_a? Array
+    raise ArgumentError, 'the networks field is empty'        unless !o.networks.empty?
+    raise ArgumentError, 'security group should be a array'   unless o.security_group.is_a? Array
+    raise ArgumentError, 'the security_group field is empty'  unless !o.security_group.empty?
+    raise ArgumentError, 'the image: %s does not exist'       % [ o.image ]   unless image? o.image
+    raise ArgumentError, 'the flavor: %s does not exist'      % [ o.flavor ]  unless flavor? o.flavor
     if o.volume
-      raise ArgumentError, 'the volume: %s does not exist'    % [ o.volume ]          unless volume? o.volume
+      raise ArgumentError, 'the volume: %s does not exist'    % [ o.volume ]  unless volume? o.volume
     end
     # step: we need to check the networks and security groups
     o.networks.each do |net|
@@ -167,7 +167,7 @@ class Stack
   # ========================================================================
 
   def exists? name 
-    !server( name ).empty?
+    !server( name ).nil?
   end
 
   alias_method :server?, :exists?
