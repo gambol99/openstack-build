@@ -159,7 +159,7 @@ class Stack
   end
 
   def network? name
-    !network( name ).empty?
+    !network( name ).nil?
   end
 
   # ========================================================================
@@ -315,7 +315,7 @@ class Stack
   end
 
   def image? name
-    !image( name ).empty?
+    !image( name ).nil?
   end
 
   def delete_image name 
@@ -350,9 +350,7 @@ class Stack
   end
 
   def flavor? name
-    !@stack.compute.flavors.select { |x| 
-      x if x.name == name or x.id == name  
-    }.empty?
+    !flavor( name ).nil?
   end
 
   # ========================================================================
