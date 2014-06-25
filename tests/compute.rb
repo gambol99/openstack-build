@@ -38,6 +38,12 @@ begin
     puts "networks: " << stack.networks.join(', ')
   end
 
+  check 'checking the network? works' do 
+    network = stack.networks.first
+    puts "checking the network: #{network} exists: %s" % [ stack.network?( network ) ]
+    puts "checking the fake network: foo exists: %s"   % [ stack.network?( 'foo' )   ]
+  end
+
   check "pulling the instances" do 
     puts "instances: " << stack.servers.join(', ')  
   end
@@ -50,6 +56,17 @@ begin
     instance = stack.servers.first
     puts  "instance: %s exists: %s"       % [ instance, stack.exists?( instance ) ]
     puts  "instance: noname, exists: %s"  % [ stack.exists?( 'noname') ]
+  end
+
+  check "checking the flavor" do 
+    puts "flavors: " << stack.flavors.join(', ')
+  end
+
+  check "checking the flavor? works" do
+    flavor = stack.flavors.first 
+    [ flavor, 'foo' ].each do |x|
+      puts "checking for flavor: #{x}, %s" % [ stack.flavor?( x ) ]
+    end
   end
 
   check "pulling details on an instance" do 
@@ -79,11 +96,8 @@ begin
     puts "image id: %s" % [ image.id ]
   end
 
-
-
   puts "\n[total] %f.3".green % [ Time.now - start_time ]
 
 rescue Exception => e 
   puts "execption: " << e.message
 end
-

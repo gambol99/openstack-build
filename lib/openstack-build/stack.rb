@@ -339,7 +339,6 @@ class Stack
   # Flavors
   # ========================================================================
   def flavor name 
-    raise ArgumentError, 'the flavor: %s does not exists'  unless flavor? name  
     @stack.compute.flavors.select { |x| 
       x if x.name == name or x.id == name 
     }.first
