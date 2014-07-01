@@ -178,6 +178,12 @@ class Stack
     }.first
   end
 
+  def instances filter = '.*'
+    @stack.compute.servers.select { |host|
+      host.name =~ /#{filter}/ or host.id == filter
+    }
+  end
+
   def servers filter = '.*'
     @stack.compute.servers.select { |host|
       host.name =~ /#{filter}/ or host.id == filter
