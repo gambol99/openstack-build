@@ -69,7 +69,7 @@ class Stack
     @stack.compute.servers.create compute_options
     # step: if block given, wait for activation 
     if block_given?
-      Timeout::timeout( 30 ) do 
+      Timeout::timeout( o[:timeout] || 60 ) do 
         loop do 
           if active? hostname
             yield server( hostname )
@@ -200,7 +200,7 @@ class Stack
     server( name ).addresses.keys
   end
 
-  def addresses name, interval = 0.2, timeout = 15
+  def addresses name, interval = 0.2, timeout = 60
     raise ArgumentError, 'the instance: %s does not exist, please check'  % [ name ] unless exists? name 
     list = []
     begin
