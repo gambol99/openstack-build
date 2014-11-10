@@ -22,8 +22,8 @@ module OpenstackBuild
     OpenstackBuild::VERSION
   end 
 
-  def self.new options 
-    OpenstackBuild::Stack::new( options )
+  def self.new(options)
+    OpenstackBuild::Stack::new(options)
   end
 
 end
